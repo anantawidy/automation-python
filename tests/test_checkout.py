@@ -1,54 +1,53 @@
 import pytest
-from playwright.sync_api import Page, expect
-
-def test_successful_checkout_with_valid_items(page: Page):
-    # Navigate to the URL
-    page.goto("https://www.saucedemo.com/")
-
-    # Log in as a valid user
-    page.fill('input[placeholder="Username"]', 'standard_user')
-    page.fill('input[placeholder="Password"]', 'secret_sauce')
-    page.click('input[type="submit"]')
-
-    # Add items to the cart
-    page.click('button[data-test="add-to-cart-sauce-labs-backpack"]')
-    page.click('button[data-test="add-to-cart-sauce-labs-bike-light"]')
-
-    # Proceed to checkout
-    page.click('a.shopping_cart_link')
-    page.click('button[data-test="checkout"]')
-
-    # Fill in checkout information
-    page.fill('input[data-test="firstName"]', 'John')
-    page.fill('input[data-test="lastName"]', 'Doe')
-    page.fill('input[data-test="postalCode"]', '12345')
-    page.click('input[data-test="continue"]')
-
-    # Finish checkout
-    page.click('button[data-test="finish"]')
-
-    # Verify confirmation message
-    confirmation_message = page.locator('.complete-header')
-    expect(confirmation_message).to_contain_text("Thank you for your order!")
-
-    order_confirmation = page.locator('.complete-text')
-    expect(order_confirmation).to_contain_text("Your order has been dispatched")
+from playwright.sync_api import expect
+from pages.login_page import LoginPage
+from pages.inventory_page import InventoryPage
+from pages.cart_page import CartPage
+from pages.checkout_page import CheckoutPage
+from pages.confirmation_page import ConfirmationPage
+from utils.config import BASE_URL, USERNAME, PASSWORD, FIRST_NAME, LAST_NAME, POSTAL_CODE
 
 
-def test_checkout_with_no_items(page: Page):
-    page.goto("https://www.saucedemo.com/")
+def test_successful_checkout_with_valid_items(page):
+    login_page = LoginPage(page)
+    inventory_page = InventoryPage(page)
+    cart_page = CartPage(page)
+    checkout_page = CheckoutPage(page)
+    confirmation_page = ConfirmationPage(page)
 
-    page.fill('input[data-test="username"]', 'standard_user')
-    page.fill('input[data-test="password"]', 'secret_sauce')
-    page.click('input[data-test="login-button"]')
+    # Login
+    login_page.goto(BASE_URL)
+    login_page.login(USERNAME, PASSWORD)
 
-    # Ensure cart is empty
-    page.click('a.shopping_cart_link')
-    expect(page.locator('.cart_item')).to_have_count(0)
+    # Add items
+    inventory_page.add_backpack()
+    inventory_page.add_bike_light()
+    inventory_page.go_to_cart()
 
-    # Proceed to checkout
-    page.click('button[data-test="checkout"]')
+    # Checkout
+    cart_page.proceed_to_checkout()
+    checkout_page.fill_checkout_info(FIRST_NAME, LAST_NAME, POSTAL_CODE)
+    checkout_page.finish_checkout()
 
-    # Verify error message
+    # Verify confirmation
+    expect(confirmation_page.get_confirmation_header()).to_contain_text("Thank you for your order!")
+    expect(confirmation_page.get_confirmation_text()).to_contain_text("Your order has been dispatched")
+
+def test_checkout_with_no_items(page):
+    login_page = LoginPage(page)
+    inventory_page = InventoryPage(page)
+    cart_page = CartPage(page)
+
+    login_page.goto(BASE_URL)
+    login_page.login("standard_user", "secret_sauce")
+
+    # Cart without items
+    inventory_page.go_to_cart()
+    expect(cart_page.get_cart_items()).to_have_count(0)
+
+    # Try checkout
+    cart_page.proceed_to_checkout()
+
+    # Error (checkout without items will usually fail)
     error = page.locator('.error-message-container')
     expect(error).to_be_visible()

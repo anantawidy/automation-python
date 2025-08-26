@@ -41,8 +41,8 @@ def test_view_cart(page):
         page.click('a:has-text("Add to cart")')
 
     dialog = dialog_info.value
-    assert dialog.message == "Product added"   # ✅ verifikasi isi alert
-    dialog.accept()                            # ✅ klik tombol OK pada alert
+    assert dialog.message == "Product added"
+    dialog.accept()
     page.click("#cartur")
     assert page.url == "https://www.demoblaze.com/cart.html"
     page.wait_for_selector("td:has-text('Sony vaio i5')")

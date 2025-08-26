@@ -1,85 +1,54 @@
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import expect
+from pages.login_page import LoginPage
+from utils.config import BASE_URL, USERNAME, PASSWORD, INVALID_USERNAME, INVALID_PASSWORD
 
-def test_successful_login(page: Page):
-    page.goto("https://www.saucedemo.com/")
+def test_successful_login(page):
+    login_page = LoginPage(page)
+    login_page.goto(BASE_URL)
+    login_page.login(USERNAME, PASSWORD)
+    expect(page).to_have_url(BASE_URL + "inventory.html")
 
-    page.fill('input[placeholder="Username"]', 'standard_user')
-    page.fill('input[placeholder="Password"]', 'secret_sauce')
-    page.click('input[type="submit"]')
-
-    expect(page).to_have_url("https://www.saucedemo.com/inventory.html")
-
-def test_unsuccessful_login_invalid_username(page: Page):
-    page.goto("https://www.saucedemo.com/")
-
-    page.fill('input[placeholder="Username"]', 'invalid_user')
-    page.fill('input[placeholder="Password"]', 'secret_sauce')
-    page.click('input[type="submit"]')
-
-    error_message = page.locator('h3[data-test="error"]')
-    print("🔍 Actual text:", error_message.text_content())
-    expect(error_message).to_contain_text(
+def test_unsuccessful_login_invalid_username(page):
+    login_page = LoginPage(page)
+    login_page.goto(BASE_URL)
+    login_page.login(INVALID_USERNAME, INVALID_PASSWORD)
+    expect(login_page.get_error()).to_contain_text(
         "Epic sadface: Username and password do not match any user in this service"
     )
 
-def test_unsuccessful_login_invalid_password(page: Page):
-    page.goto("https://www.saucedemo.com/")
-
-    page.fill('input[placeholder="Username"]', 'standard_user')
-    page.fill('input[placeholder="Password"]', 'invalid_password')
-    page.click('input[type="submit"]')
-
-    error_message = page.locator('h3[data-test="error"]')
-    print("🔍 Actual text:", error_message.text_content())
-    expect(error_message).to_contain_text(
+def test_unsuccessful_login_invalid_password(page):
+    login_page = LoginPage(page)
+    login_page.goto(BASE_URL)
+    login_page.login(USERNAME, INVALID_PASSWORD)
+    expect(login_page.get_error()).to_contain_text(
         "Epic sadface: Username and password do not match any user in this service"
     )
 
-def test_unsuccessful_login_both_invalid(page: Page):
-    page.goto("https://www.saucedemo.com/")
-
-    page.fill('input[placeholder="Username"]', 'invalid_user')
-    page.fill('input[placeholder="Password"]', 'invalid_pass')
-    page.click('input[type="submit"]')
-
-    error_message = page.locator('[data-test="error"]')
-    print("🔍 Actual text:", error_message.text_content())
-    expect(error_message).to_be_visible()
-    expect(error_message).to_contain_text(
+def test_unsuccessful_login_both_invalid(page):
+    login_page = LoginPage(page)
+    login_page.goto(BASE_URL)
+    login_page.login("invalid_user", "invalid_pass")
+    expect(login_page.get_error()).to_contain_text(
         "Epic sadface: Username and password do not match any user in this service"
     )
 
-def test_unsuccessful_login_empty_fields(page: Page):
-    page.goto("https://www.saucedemo.com/")
-    page.click('input[type="submit"]')
+def test_unsuccessful_login_empty_fields(page):
+    login_page = LoginPage(page)
+    login_page.goto(BASE_URL)
+    login_page.click(LoginPage.LOGIN_BUTTON)
+    expect(login_page.get_error()).to_contain_text("Epic sadface: Username is required")
 
-    error_message = page.locator('.error-message-container')
-    print("🔍 Actual text:", error_message.text_content())
-    expect(error_message).to_be_visible()
-    expect(error_message).to_contain_text("Epic sadface: Username is required")
+def test_unsuccessful_login_special_chars(page):
+    login_page = LoginPage(page)
+    login_page.goto(BASE_URL)
+    login_page.login("user!@#", "validPassword")
+    expect(login_page.get_error()).to_contain_text("Epic sadface")
 
-def test_unsuccessful_login_special_chars(page: Page):
-    page.goto("https://www.saucedemo.com/")
-
-    page.fill('input[placeholder="Username"]', 'user!@#')
-    page.fill('input[placeholder="Password"]', 'validPassword')
-    page.click('input[type="submit"]')
-
-    error_message = page.locator('.error-message-container')
-    print("🔍 Actual text:", error_message.text_content())
-    expect(error_message).to_be_visible()
-    expect(error_message).to_contain_text("Epic sadface")
-
-def test_unsuccessful_login_sql_injection(page: Page):
-    page.goto("https://www.saucedemo.com/")
-
-    page.fill('input[placeholder="Username"]', "' OR '1'='1")
-    page.fill('input[placeholder="Password"]', "' OR '1'='1")
-    page.click('input[type="submit"]')
-
-    error_message = page.locator('[data-test="error"]')
-    print("🔍 Actual text:", error_message.text_content())
-    expect(error_message).to_contain_text(
+def test_unsuccessful_login_sql_injection(page):
+    login_page = LoginPage(page)
+    login_page.goto(BASE_URL)
+    login_page.login("' OR '1'='1", "' OR '1'='1")
+    expect(login_page.get_error()).to_contain_text(
         "Epic sadface: Username and password do not match any user in this service"
     )
