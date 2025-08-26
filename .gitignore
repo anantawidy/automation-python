@@ -1,0 +1,45 @@
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyd
+*.pdb
+*.egg-info/
+*.egg
+*.log
+
+# === Virtual Environment ===
+.env
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+
+# === IDE / Editor ===
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# === Playwright ===
+# artifacts & reports
+test-results/
+playwright-report/
+blob-report/
+trace.zip
+*.trace.zip
+*.json
+
+# screenshots & videos
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webm
+*.mp4
+
+# === OS Files ===
+.DS_Store
+Thumbs.db
