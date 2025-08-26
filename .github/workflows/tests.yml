@@ -18,11 +18,24 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      # ⏱️ Cache Playwright browsers supaya gak download ulang tiap run
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright
 
       - name: Install Playwright Browsers
         run: |
